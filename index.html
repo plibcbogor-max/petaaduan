@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Peta Pengaduan Rokok Ilegal - Bea Cukai Bogor</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+            background-color: #f8f9fa;
+        }
+        
+        #input-panel { 
+            width: 380px; 
+            background-color: #ffffff; 
+            padding: 20px; 
+            border-right: 2px solid #e0e0e0; 
+            display: flex; 
+            flex-direction: column; 
+            overflow-y: auto; 
+            box-sizing: border-box; 
+            z-index: 10;
+        }
+        
+        #map { 
+            flex-grow: 1; 
+            height: 100%; 
+            position: relative;
+        }
+
+        .header-title { 
+            color: #2c3e50; 
+            font-size: 18px; 
+            font-weight: 800; 
+            border-left: 4px solid #e74c3c;
+            padding-left: 12px;
+            margin-bottom: 5px;
+        }
+        
+        .header-subtitle { 
+            color: #7f8c8d; 
+            font-size: 12px; 
+            margin-bottom: 20px;
+            padding-left: 16px;
+        }
+        
+        /* Filter Section */
+        .filter-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .filter-title {
+            font-weight: 600;
+            font-size: 13px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        
+        .filter-btn {
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn:hover {
+            background: #e2e8f0;
+        }
+        
+        .filter-btn.active {
+            background: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+        
+        .month-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .month-selector select {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        
+        .stat-compare {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .stat-compare-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+        }
+        
+        .stat-compare-number {
+            font-size: 18px;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        
+        .stat-compare-label {
+            font-size: 10px;
+            color: #6c757d;
+        }
+        
+        .form-group { 
+            margin-bottom: 15px; 
+        }
+        
+        label { 
+            display: block; 
+            margin-bottom: 6px; 
+            font-weight: 600; 
+            color: #34495e; 
+            font-size: 13px;
+        }
+        
+        label .required {
+            color: #dc3545;
+        }
+        
+        label .optional {
+            color: #6c757d;
+            font-weight: normal;
+            font-size: 11px;
+        }
+        
+        input, textarea { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 6px; 
+            font-size: 14px; 
+            font-family: inherit;
+        }
+        
+        input:focus, textarea:focus { 
+            border-color: #3498db; 
+            outline: none;
+        }
+        
+        textarea { 
+            resize: vertical; 
+            height: 60px; 
+        }
+        
+        button { 
+            background-color: #0d6efd; 
+            color: white; 
+            padding: 12px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            width: 100%; 
+            font-size: 15px; 
+            font-weight: bold; 
+            margin-top: 10px;
+        }
+        
+        button:hover { 
+            background-color: #0b5ed7; 
+        }
+        
+        button:disabled { 
+            background-color: #9ec5fe; 
+            cursor: not-allowed; 
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            opacity: 0.9;
+        }
+        
+        .preview-text {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-top: 8px;
+            border-left: 3px solid #0d6efd;
+        }
+        
+        .info-hint {
+            font-size: 11px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        .warning-text {
+            color: #dc3545;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+        
+        .success-text {
+            color: #28a745;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+        
+        .list-header {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .refresh-btn {
+            background: none;
+            border: none;
+            color: #0d6efd;
+            cursor: pointer;
+            width: auto;
+            padding: 0;
+            margin: 0;
+            font-size: 12px;
+        }
+        
+        .refresh-btn:hover {
+            text-decoration: underline;
+            background: none;
+        }
+        
+        #report-list {
+            list-style: none;
+            margin-top: 10px;
+        }
+        
+        #report-list li {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        
+        #status-msg {
+            display: none;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .status-success {
+            background: #d1e7dd;
+            color: #0a3622;
+            border: 1px solid #a3cfbb;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #58151c;
+            border: 1px solid #f1aeb5;
+        }
+        
+        .status-info {
+            background: #cff4fc;
+            color: #055160;
+            border: 1px solid #9eeaf9;
+        }
+        
+        .owner-mark {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.9);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            font-family: monospace;
+        }
+        
+        .leaflet-tooltip.custom-hover {
+            background: rgba(44,62,80,0.95);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 1000;
+            font-size: 11px;
+        }
+        
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #e74c3c;
+        }
+        
+        .coordinate-info {
+            background: #e8f4fd;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            #input-panel {
+                width: 100%;
+                height: 45vh;
+                border-right: none;
+                border-bottom: 2px solid #e0e0e0;
+                padding: 15px;
+            }
+            #map {
+                height: 55vh;
+            }
+            .legend {
+                bottom: 10px;
+                right: 10px;
+                padding: 6px;
+            }
+            .filter-buttons {
+                gap: 5px;
+            }
+            .filter-btn {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="input-panel">
+        <h2 class="header-title">PETA PENGADUAN ROKOK ILEGAL</h2>
+        <div class="header-subtitle">BEA CUKAI BOGOR</div>
+        
+        <div class="stat-box">
+            <div class="stat-number" id="total-data">0</div>
+            <div class="stat-label">Total Laporan (Filter Aktif)</div>
+        </div>
+        
+        <!-- Filter Bulan -->
+        <div class="filter-section">
+            <div class="filter-title">
+                <i class="fas fa-calendar-alt"></i> Filter Periode
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">Semua</button>
+                <button class="filter-btn" data-filter="month" onclick="setFilter('month')">Pilih Bulan</button>
+                <button class="filter-btn" data-filter="last3" onclick="setFilter('last3')">3 Bulan Terakhir</button>
+                <button class="filter-btn" data-filter="year" onclick="setFilter('year')">Tahun Ini</button>
+            </div>
+            <div class="month-selector" id="month-selector" style="display: none;">
+                <select id="month-select">
+                    <option value="1">Januari</option>
+                    <option value="2">Februari</option>
+                    <option value="3">Maret</option>
+                    <option value="4">April</option>
+                    <option value="5">Mei</option>
+                    <option value="6">Juni</option>
+                    <option value="7">Juli</option>
+                    <option value="8">Agustus</option>
+                    <option value="9">September</option>
+                    <option value="10">Oktober</option>
+                    <option value="11">November</option>
+                    <option value="12">Desember</option>
+                </select>
+                <select id="year-select"></select>
+                <button class="filter-btn" onclick="applyMonthFilter()" style="background:#0d6efd; color:white;">Terapkan</button>
+            </div>
+            <div class="stat-compare" id="stat-compare" style="display: none;">
+                <div class="stat-compare-item">
+                    <div class="stat-compare-number" id="compare-current">0</div>
+                    <div class="stat-compare-label">Periode Ini</div>
+                </div>
+                <div class="stat-compare-item">
+                    <div class="stat-compare-number" id="compare-previous">0</div>
+                    <div class="stat-compare-label">Periode Sebelumnya</div>
+                </div>
+                <div class="stat-compare-item">
+                    <div class="stat-compare-number" id="compare-change">0%</div>
+                    <div class="stat-compare-label">Perubahan</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>📍 Kelurahan/Desa <span class="optional">(Opsional)</span></label>
+            <input type="text" id="kelurahan" placeholder="Contoh: Cibinong">
+            <div class="info-hint">Opsional, untuk titik lebih spesifik</div>
+        </div>
+        
+        <div class="form-group">
+            <label>📍 Kecamatan <span class="required">*</span></label>
+            <input type="text" id="kecamatan" placeholder="Contoh: Cibinong">
+            <div class="info-hint"><i class="fas fa-map-marker-alt"></i> <strong>Titik koordinat akan merujuk ke pusat kecamatan ini</strong></div>
+        </div>
+        
+        <div class="form-group">
+            <label>📍 Kabupaten/Kota <span class="required">*</span></label>
+            <input type="text" id="kotakab" placeholder="Contoh: kabupaten bogor">
+            <div class="info-hint">Harus diawali "kabupaten" atau "kota"</div>
+        </div>
+        
+        <div class="form-group">
+            <label>🏢 Provinsi</label>
+            <input type="text" id="provinsi" value="Jawa Barat">
+        </div>
+        
+        <div class="form-group">
+            <label>📝 Keterangan</label>
+            <textarea id="keterangan" placeholder="Contoh: Toko ABC menjual rokok tanpa pita cukai"></textarea>
+        </div>
+        
+        <div class="preview-text" id="preview-lokasi">
+            <strong>Preview:</strong> -
+        </div>
+        
+        <div class="coordinate-info" id="coordinate-info">
+            <i class="fas fa-info-circle"></i> <span id="coord-detail"></span>
+        </div>
+        
+        <button id="btn-simpan" onclick="simpanLaporan()">📌 SIMPAN LAPORAN</button>
+        
+        <div id="status-msg"></div>
+        
+        <div class="list-header">
+            <span>📋 LAPORAN TERBARU</span>
+            <button class="refresh-btn" onclick="loadData()">🔄 Refresh</button>
+        </div>
+        <ul id="report-list">
+            <li style="text-align:center; color:#94a3b8;">Memuat data...</li>
+        </ul>
+    </div>
+
+    <div id="map">
+        <div class="owner-mark">🚬 FOK | BEA CUKAI</div>
+        <div class="legend">
+            <div class="legend-title">📊 Legenda</div>
+            <div class="legend-item">
+                <div class="legend-color"></div>
+                <span>Lingkaran = Lokasi Kecamatan</span>
+            </div>
+            <div class="legend-item">
+                <span style="margin-left:28px;">Semakin besar = Semakin banyak laporan</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // =========================================================
+        // URL GOOGLE APPS SCRIPT
+        // =========================================================
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbK7D0D0HP3RDGR9NpAC8T23JuqtPXwPHMgTqf0bIT9sUlDPCyLm_vFxbXVlahNVgMwA/exec';
+        
+        // Inisialisasi Peta
+        var map = L.map('map', {
+            zoomControl: false,
+            preferCanvas: true
+        }).setView([-6.5950, 106.7890], 11);
+        
+        L.control.zoom({ position: 'topright' }).addTo(map);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        var markerGroup = L.layerGroup().addTo(map);
+        var semuaData = [];
+        var dataFiltered = [];
+        var filterType = 'all';
+        var currentMonth = new Date().getMonth() + 1;
+        var currentYear = new Date().getFullYear();
+        
+        // Helper Functions
+        function toTitleCase(str) {
+            if (!str) return '';
+            return str.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+        }
+        
+        function validateKabKota(value) {
+            var v = value.toLowerCase().trim();
+            return v.startsWith('kabupaten') || v.startsWith('kota');
+        }
+        
+        function formatLokasi(kel, kec, kab) {
+            var parts = [];
+            if (kel) parts.push(toTitleCase(kel));
+            if (kec) parts.push('Kec. ' + toTitleCase(kec));
+            if (kab) {
+                var kabFormatted = kab.toLowerCase().trim();
+                var words = kabFormatted.split(' ');
+                if (words.length > 0) {
+                    kabFormatted = words[0] + ' ' + toTitleCase(words.slice(1).join(' '));
+                }
+                parts.push(kabFormatted);
+            }
+            return parts.join(', ');
+        }
+        
+        function showStatus(msg, type) {
+            var statusDiv = document.getElementById('status-msg');
+            statusDiv.className = 'status-' + type;
+            statusDiv.innerHTML = msg;
+            statusDiv.style.display = 'block';
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+        
+        function updatePreview() {
+            var kel = document.getElementById('kelurahan').value.trim();
+            var kec = document.getElementById('kecamatan').value.trim();
+            var kab = document.getElementById('kotakab').value.trim();
+            var preview = formatLokasi(kel, kec, kab);
+            var html = '<strong>Preview:</strong> ' + (preview || '-');
+            if (kab && !validateKabKota(kab)) {
+                html += '<br><span class="warning-text">⚠️ Harus diawali "kabupaten" atau "kota"</span>';
+            }
+            document.getElementById('preview-lokasi').innerHTML = html;
+        }
+        
+        // Setup Year Select
+        function setupYearSelect() {
+            var yearSelect = document.getElementById('year-select');
+            var currentYear = new Date().getFullYear();
+            yearSelect.innerHTML = '';
+            for (var y = currentYear - 2; y <= currentYear + 1; y++) {
+                var option = document.createElement('option');
+                option.value = y;
+                option.text = y;
+                if (y === currentYear) option.selected = true;
+                yearSelect.appendChild(option);
+            }
+        }
+        
+        // Filter Functions
+        function setFilter(type) {
+            filterType = type;
+            
+            // Update button active state
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            var monthSelector = document.getElementById('month-selector');
+            var statCompare = document.getElementById('stat-compare');
+            
+            if (type === 'month') {
+                monthSelector.style.display = 'flex';
+                statCompare.style.display = 'flex';
+            } else {
+                monthSelector.style.display = 'none';
+                if (type === 'all') {
+                    statCompare.style.display = 'none';
+                } else {
+                    statCompare.style.display = 'flex';
+                }
+                applyFilter();
+            }
+        }
+        
+        function applyMonthFilter() {
+            currentMonth = parseInt(document.getElementById('month-select').value);
+            currentYear = parseInt(document.getElementById('year-select').value);
+            applyFilter();
+        }
+        
+        function applyFilter() {
+            var currentDate = new Date();
+            
+            dataFiltered = semuaData.filter(item => {
+                if (!item.timestamp) return false;
+                var tgl = new Date(item.timestamp);
+                if (isNaN(tgl.getTime())) return false;
+                
+                switch(filterType) {
+                    case 'month':
+                        return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear;
+                    case 'last3':
+                        var threeMonthsAgo = new Date();
+                        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+                        return tgl >= threeMonthsAgo;
+                    case 'year':
+                        return tgl.getFullYear() === currentDate.getFullYear();
+                    default:
+                        return true;
+                }
+            });
+            
+            updateCompareStats();
+            renderMarker();
+            updateList();
+            document.getElementById('total-data').innerText = dataFiltered.length;
+            
+            var filterText = {
+                'all': 'Semua',
+                'month': formatMonthYear(currentMonth, currentYear),
+                'last3': '3 Bulan Terakhir',
+                'year': 'Tahun ' + currentDate.getFullYear()
+            };
+            showStatus(`Menampilkan ${dataFiltered.length} laporan (${filterText[filterType]})`, 'info');
+        }
+        
+        function formatMonthYear(month, year) {
+            var months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                          'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            return months[month - 1] + ' ' + year;
+        }
+        
+        function updateCompareStats() {
+            if (filterType === 'all') {
+                document.getElementById('stat-compare').style.display = 'none';
+                return;
+            }
+            document.getElementById('stat-compare').style.display = 'flex';
+            
+            var currentCount = dataFiltered.length;
+            var previousCount = 0;
+            
+            if (filterType === 'month') {
+                var prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+                var prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+                previousCount = semuaData.filter(item => {
+                    if (!item.timestamp) return false;
+                    var tgl = new Date(item.timestamp);
+                    return tgl.getMonth() + 1 === prevMonth && tgl.getFullYear() === prevYear;
+                }).length;
+            } else if (filterType === 'last3') {
+                var startPrev = new Date();
+                startPrev.setMonth(startPrev.getMonth() - 6);
+                var endPrev = new Date();
+                endPrev.setMonth(endPrev.getMonth() - 3);
+                previousCount = semuaData.filter(item => {
+                    if (!item.timestamp) return false;
+                    var tgl = new Date(item.timestamp);
+                    return tgl >= startPrev && tgl < endPrev;
+                }).length;
+            } else if (filterType === 'year') {
+                var currentYear = new Date().getFullYear();
+                previousCount = semuaData.filter(item => {
+                    if (!item.timestamp) return false;
+                    var tgl = new Date(item.timestamp);
+                    return tgl.getFullYear() === currentYear - 1;
+                }).length;
+            }
+            
+            document.getElementById('compare-current').innerText = currentCount;
+            document.getElementById('compare-previous').innerText = previousCount;
+            
+            var change = previousCount === 0 ? (currentCount > 0 ? 100 : 0) : ((currentCount - previousCount) / previousCount * 100).toFixed(1);
+            var changeColor = change >= 0 ? '#28a745' : '#dc3545';
+            var changeIcon = change >= 0 ? '↑' : '↓';
+            document.getElementById('compare-change').innerHTML = `<span style="color:${changeColor}">${changeIcon} ${Math.abs(change)}%</span>`;
+        }
+        
+        // =========================================================
+        // FUNGSI PENCARIAN KOORDINAT - FOKUS KE KECAMATAN
+        // =========================================================
+        async function cariKoordinat(kel, kec, kab, prov) {
+            // Prioritas pencarian: Kecamatan terlebih dahulu
+            var queries = [];
+            
+            // Query 1: Kecamatan + Kabupaten + Provinsi (Paling akurat untuk kecamatan)
+            var kecFormatted = kec ? 'Kecamatan ' + toTitleCase(kec) : '';
+            var kabFormatted = kab ? kab.toLowerCase().trim() : '';
+            
+            if (kecFormatted && kabFormatted) {
+                queries.push(kecFormatted + ', ' + kabFormatted + ', ' + prov + ', Indonesia');
+            }
+            
+            // Query 2: Kecamatan + Kabupaten (tanpa provinsi)
+            if (kecFormatted && kabFormatted) {
+                queries.push(kecFormatted + ', ' + kabFormatted + ', Indonesia');
+            }
+            
+            // Query 3: Kecamatan + Provinsi
+            if (kecFormatted && prov) {
+                queries.push(kecFormatted + ', ' + prov + ', Indonesia');
+            }
+            
+            // Query 4: Nama kecamatan saja + Kabupaten
+            if (kec && kabFormatted) {
+                queries.push(toTitleCase(kec) + ', ' + kabFormatted + ', ' + prov + ', Indonesia');
+            }
+            
+            // Query 5: Jika ada kelurahan, coba dengan kelurahan + kecamatan
+            if (kel && kecFormatted && kabFormatted) {
+                queries.push(toTitleCase(kel) + ', ' + kecFormatted + ', ' + kabFormatted + ', ' + prov + ', Indonesia');
+            }
+            
+            // Query 6: Fallback ke format lengkap
+            var lokasiFull = formatLokasi(kel, kec, kab);
+            if (lokasiFull) {
+                queries.push(lokasiFull + ', ' + prov + ', Indonesia');
+            }
+            
+            // Hapus query duplikat
+            queries = [...new Set(queries)];
+            
+            // Tampilkan info pencarian
+            var coordInfo = document.getElementById('coordinate-info');
+            var coordDetail = document.getElementById('coord-detail');
+            coordInfo.style.display = 'block';
+            coordDetail.innerHTML = 'Mencari koordinat kecamatan...';
+            
+            for (var i = 0; i < queries.length; i++) {
+                try {
+                    coordDetail.innerHTML = `Mencoba: ${queries[i].substring(0, 50)}...`;
+                    
+                    var res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queries[i])}&limit=1&countrycodes=id&zoom=10`);
+                    var data = await res.json();
+                    
+                    if (data && data.length > 0) {
+                        var lat = parseFloat(data[0].lat);
+                        var lon = parseFloat(data[0].lon);
+                        var displayName = data[0].display_name;
+                        
+                        coordDetail.innerHTML = `✅ Ditemukan: ${displayName.substring(0, 80)}...<br>📍 Koordinat: ${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                        
+                        setTimeout(() => {
+                            coordInfo.style.display = 'none';
+                        }, 3000);
+                        
+                        return {
+                            lat: lat,
+                            lon: lon,
+                            displayName: displayName
+                        };
+                    }
+                } catch(e) {
+                    console.log('Error:', e);
+                }
+                await new Promise(r => setTimeout(r, 300));
+            }
+            
+            coordDetail.innerHTML = '❌ Lokasi kecamatan tidak ditemukan. Periksa ejaan.';
+            setTimeout(() => {
+                coordInfo.style.display = 'none';
+            }, 3000);
+            
+            return null;
+        }
+        
+        // Load Data dari Google Sheets
+        async function loadData() {
+            showStatus('🔄 Mengambil data...', 'info');
+            try {
+                var response = await fetch(SCRIPT_URL);
+                var data = await response.json();
+                semuaData = data.filter(d => {
+                    return d.lat && d.lon && !isNaN(d.lat) && !isNaN(d.lon) &&
+                           d.lat >= -11 && d.lat <= 6 && d.lon >= 95 && d.lon <= 141;
+                });
+                applyFilter();
+                showStatus('✅ ' + semuaData.length + ' laporan dimuat', 'success');
+            } catch(e) {
+                console.error(e);
+                showStatus('❌ Gagal memuat data: ' + e.message, 'error');
+            }
+        }
+        
+        // Render Marker di Peta
+        function renderMarker() {
+            markerGroup.clearLayers();
+            var groups = {};
+            
+            dataFiltered.forEach(d => {
+                if (!d.locationId) return;
+                if (!groups[d.locationId]) {
+                    groups[d.locationId] = {
+                        name: d.lokasi_lengkap,
+                        lat: d.lat,
+                        lon: d.lon,
+                        count: 0,
+                        catatan: []
+                    };
+                }
+                groups[d.locationId].count++;
+                if (d.keterangan) {
+                    var tgl = d.timestamp ? new Date(d.timestamp).toLocaleDateString('id-ID') : '';
+                    groups[d.locationId].catatan.push(tgl ? `[${tgl}] ${d.keterangan}` : d.keterangan);
+                }
+            });
+            
+            for (var id in groups) {
+                var g = groups[id];
+                // Radius berdasarkan jumlah laporan - semakin banyak semakin besar
+                var radius = 10 + ((g.count - 1) * 8);
+                var radiusMeter = radius * 40;
+                
+                var catatanHtml = g.catatan.length ? `
+                    <div style="font-size:11px; margin-top:8px; padding:5px; background:#f8f9fa; border-radius:4px; max-height:80px; overflow-y:auto;">
+                        <strong>📝 Catatan:</strong><br>${g.catatan.join('<br>')}
+                    </div>
+                ` : '';
+                
+                var popup = `
+                    <div style="text-align:center; min-width:180px;">
+                        <strong style="font-size:14px;">📍 ${g.name}</strong><br>
+                        <hr style="margin:8px 0;">
+                        <span style="font-size:12px;">📊 Total Pengaduan:</span><br>
+                        <strong style="font-size:24px; color:#e74c3c;">${g.count}</strong>
+                        ${catatanHtml}
+                        <hr style="margin:8px 0;">
+                        <span style="font-size:10px; color:#6c757d;">📍 Koordinat Kecamatan</span>
+                    </div>
+                `;
+                
+                var marker = L.circle([g.lat, g.lon], {
+                    radius: radiusMeter,
+                    fillColor: '#e74c3c',
+                    color: '#c0392b',
+                    weight: 2,
+                    fillOpacity: 0.65
+                });
+                
+                marker.bindTooltip(`<strong>${g.name}</strong><br>📊 ${g.count} laporan<br>📍 Kecamatan`, {
+                    direction: 'top',
+                    className: 'custom-hover'
+                });
+                marker.bindPopup(popup);
+                markerGroup.addLayer(marker);
+            }
+        }
+        
+        // Update Daftar Laporan
+        function updateList() {
+            var list = document.getElementById('report-list');
+            var recent = dataFiltered.slice(-5).reverse();
+            if (recent.length === 0) {
+                list.innerHTML = '<li style="text-align:center;">Tidak ada laporan untuk periode ini</li>';
+                return;
+            }
+            var html = '';
+            recent.forEach(r => {
+                var tgl = r.timestamp ? new Date(r.timestamp).toLocaleDateString('id-ID') : '-';
+                var lokasi = r.lokasi_lengkap || '-';
+                html += `<li>
+                    <b>📍 ${lokasi.substring(0, 45)}${lokasi.length > 45 ? '...' : ''}</b><br>
+                    <span style="font-size:10px; color:#6c757d;">📅 ${tgl}</span><br>
+                    <span style="font-size:11px;">${r.keterangan || 'Tanpa keterangan'}</span>
+                </li>`;
+            });
+            list.innerHTML = html;
+        }
+        
+        // Simpan Laporan
+        async function simpanLaporan() {
+            var kel = document.getElementById('kelurahan').value.trim();
+            var kec = document.getElementById('kecamatan').value.trim();
+            var kab = document.getElementById('kotakab').value.trim();
+            var prov = document.getElementById('provinsi').value.trim();
+            var ket = document.getElementById('keterangan').value.trim();
+            var btn = document.getElementById('btn-simpan');
+            
+            if (!kec) {
+                alert('⚠️ Kecamatan wajib diisi! Titik koordinat akan merujuk ke kecamatan.');
+                document.getElementById('kecamatan').focus();
+                return;
+            }
+            if (!kab) {
+                alert('⚠️ Kabupaten/Kota wajib diisi!');
+                document.getElementById('kotakab').focus();
+                return;
+            }
+            if (!validateKabKota(kab)) {
+                alert('⚠️ Kabupaten/Kota harus diawali dengan "kabupaten" atau "kota"\nContoh: kabupaten bogor');
+                document.getElementById('kotakab').focus();
+                return;
+            }
+            
+            btn.disabled = true;
+            showStatus('🔍 Mencari koordinat kecamatan...', 'info');
+            
+            try {
+                var koord = await cariKoordinat(kel, kec, kab, prov);
+                if (!koord) {
+                    alert('❌ Lokasi kecamatan tidak ditemukan.\n\nPeriksa:\n- Nama kecamatan: contoh "Cibinong"\n- Kabupaten: contoh "kabupaten bogor"\n- Pastikan nama benar dan ada di wilayah Indonesia');
+                    showStatus('❌ Lokasi kecamatan tidak ditemukan', 'error');
+                    btn.disabled = false;
+                    return;
+                }
+                
+                var lokasiFull = formatLokasi(kel, kec, kab);
+                var locationId = lokasiFull.toLowerCase().replace(/[\s,]/g, '');
+                
+                showStatus('💾 Menyimpan ke server...', 'info');
+                
+                var formData = new URLSearchParams();
+                formData.append('lokasi_lengkap', lokasiFull);
+                formData.append('provinsi', prov);
+                formData.append('keterangan', ket);
+                formData.append('lat', koord.lat);
+                formData.append('lon', koord.lon);
+                formData.append('locationId', locationId);
+                
+                var response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+                var result = await response.json();
+                
+                if (result.status === 'success') {
+                    showStatus('✅ Laporan berhasil disimpan!', 'success');
+                    document.getElementById('kelurahan').value = '';
+                    document.getElementById('kecamatan').value = '';
+                    document.getElementById('kotakab').value = '';
+                    document.getElementById('keterangan').value = '';
+                    updatePreview();
+                    map.setView([koord.lat, koord.lon], 13);
+                    loadData();
+                } else {
+                    showStatus('❌ Gagal: ' + result.message, 'error');
+                }
+            } catch(e) {
+                console.error(e);
+                showStatus('❌ Error: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+        
+        // Inisialisasi
+        window.onload = function() {
+            setupYearSelect();
+            loadData();
+            updatePreview();
+            setTimeout(() => map.invalidateSize(), 500);
+        };
+    </script>
+</body>
+</html>
