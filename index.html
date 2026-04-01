@@ -58,6 +58,7 @@
             padding-left: 16px;
         }
         
+        /* Filter Section */
         .filter-section {
             background: #f8f9fa;
             border-radius: 8px;
@@ -249,6 +250,12 @@
             margin-top: 5px;
         }
         
+        .success-text {
+            color: #28a745;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+        
         .list-header {
             margin-top: 20px;
             padding-top: 15px;
@@ -287,81 +294,6 @@
             padding: 10px;
             margin-bottom: 8px;
             font-size: 12px;
-            position: relative;
-        }
-        
-        /* Style untuk tombol tindak lanjut */
-        .followup-btn {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 5px 10px;
-            font-size: 11px;
-            cursor: pointer;
-            width: auto;
-            margin-top: 8px;
-            margin-right: 5px;
-            display: inline-block;
-        }
-        
-        .followup-btn.done {
-            background-color: #6c757d;
-            cursor: default;
-            opacity: 0.8;
-        }
-        
-        .followup-btn:hover:not(.done) {
-            background-color: #218838;
-        }
-        
-        /* Style untuk tombol Google Maps */
-        .map-link-btn {
-            background-color: #ea4335;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 5px 10px;
-            font-size: 11px;
-            cursor: pointer;
-            width: auto;
-            margin-top: 8px;
-            margin-right: 5px;
-            display: inline-block;
-            text-decoration: none;
-        }
-        
-        .map-link-btn:hover {
-            background-color: #d3382a;
-        }
-        
-        .status-badge {
-            display: inline-block;
-            background-color: #ffc107;
-            color: #856404;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: bold;
-            margin-left: 8px;
-        }
-        
-        .status-badge.done {
-            background-color: #28a745;
-            color: white;
-        }
-        
-        .report-actions {
-            margin-top: 8px;
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-        }
-        
-        .gmaps-input-hint {
-            font-size: 10px;
-            color: #6c757d;
-            margin-top: 3px;
         }
         
         #status-msg {
@@ -564,16 +496,7 @@
         
         <div class="form-group">
             <label>📝 Keterangan</label>
-            <textarea id="keterangan" placeholder="Contoh: Toko ABC menjual rokok tanpa pita cukai. Info tambahan: no telp 0812xxxx, lokasi dekat pasar"></textarea>
-        </div>
-        
-        <!-- FITUR 1: Kolom Input URL Google Maps -->
-        <div class="form-group">
-            <label>🗺️ URL Google Maps Lokasi <span class="optional">(Opsional)</span></label>
-            <input type="url" id="gmaps_url" placeholder="https://maps.app.goo.gl/... atau https://www.google.com/maps/...">
-            <div class="gmaps-input-hint">
-                <i class="fas fa-map-marked-alt"></i> Masukkan link Google Maps titik lokasi spesifik (rumah/warung/bangunan)
-            </div>
+            <textarea id="keterangan" placeholder="Contoh: Toko ABC menjual rokok tanpa pita cukai"></textarea>
         </div>
         
         <div class="preview-text" id="preview-lokasi">
@@ -825,32 +748,47 @@
         // FUNGSI PENCARIAN KOORDINAT - FOKUS KE KECAMATAN
         // =========================================================
         async function cariKoordinat(kel, kec, kab, prov) {
+            // Prioritas pencarian: Kecamatan terlebih dahulu
             var queries = [];
+            
+            // Query 1: Kecamatan + Kabupaten + Provinsi (Paling akurat untuk kecamatan)
             var kecFormatted = kec ? 'Kecamatan ' + toTitleCase(kec) : '';
             var kabFormatted = kab ? kab.toLowerCase().trim() : '';
             
             if (kecFormatted && kabFormatted) {
                 queries.push(kecFormatted + ', ' + kabFormatted + ', ' + prov + ', Indonesia');
             }
+            
+            // Query 2: Kecamatan + Kabupaten (tanpa provinsi)
             if (kecFormatted && kabFormatted) {
                 queries.push(kecFormatted + ', ' + kabFormatted + ', Indonesia');
             }
+            
+            // Query 3: Kecamatan + Provinsi
             if (kecFormatted && prov) {
                 queries.push(kecFormatted + ', ' + prov + ', Indonesia');
             }
+            
+            // Query 4: Nama kecamatan saja + Kabupaten
             if (kec && kabFormatted) {
                 queries.push(toTitleCase(kec) + ', ' + kabFormatted + ', ' + prov + ', Indonesia');
             }
+            
+            // Query 5: Jika ada kelurahan, coba dengan kelurahan + kecamatan
             if (kel && kecFormatted && kabFormatted) {
                 queries.push(toTitleCase(kel) + ', ' + kecFormatted + ', ' + kabFormatted + ', ' + prov + ', Indonesia');
             }
+            
+            // Query 6: Fallback ke format lengkap
             var lokasiFull = formatLokasi(kel, kec, kab);
             if (lokasiFull) {
                 queries.push(lokasiFull + ', ' + prov + ', Indonesia');
             }
             
+            // Hapus query duplikat
             queries = [...new Set(queries)];
             
+            // Tampilkan info pencarian
             var coordInfo = document.getElementById('coordinate-info');
             var coordDetail = document.getElementById('coord-detail');
             coordInfo.style.display = 'block';
@@ -859,6 +797,7 @@
             for (var i = 0; i < queries.length; i++) {
                 try {
                     coordDetail.innerHTML = `Mencoba: ${queries[i].substring(0, 50)}...`;
+                    
                     var res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queries[i])}&limit=1&countrycodes=id&zoom=10`);
                     var data = await res.json();
                     
@@ -868,15 +807,28 @@
                         var displayName = data[0].display_name;
                         
                         coordDetail.innerHTML = `✅ Ditemukan: ${displayName.substring(0, 80)}...<br>📍 Koordinat: ${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-                        setTimeout(() => { coordInfo.style.display = 'none'; }, 3000);
-                        return { lat: lat, lon: lon, displayName: displayName };
+                        
+                        setTimeout(() => {
+                            coordInfo.style.display = 'none';
+                        }, 3000);
+                        
+                        return {
+                            lat: lat,
+                            lon: lon,
+                            displayName: displayName
+                        };
                     }
-                } catch(e) { console.log('Error:', e); }
+                } catch(e) {
+                    console.log('Error:', e);
+                }
                 await new Promise(r => setTimeout(r, 300));
             }
             
             coordDetail.innerHTML = '❌ Lokasi kecamatan tidak ditemukan. Periksa ejaan.';
-            setTimeout(() => { coordInfo.style.display = 'none'; }, 3000);
+            setTimeout(() => {
+                coordInfo.style.display = 'none';
+            }, 3000);
+            
             return null;
         }
         
@@ -889,13 +841,7 @@
                 semuaData = data.filter(d => {
                     return d.lat && d.lon && !isNaN(d.lat) && !isNaN(d.lon) &&
                            d.lat >= -11 && d.lat <= 6 && d.lon >= 95 && d.lon <= 141;
-                }).map(d => ({
-                    ...d,
-                    lat: parseFloat(d.lat),
-                    lon: parseFloat(d.lon),
-                    gmaps_url: d.gmaps_url || '',
-                    tindak_lanjut: d.tindak_lanjut || 'Belum'
-                }));
+                });
                 applyFilter();
                 showStatus('✅ ' + semuaData.length + ' laporan dimuat', 'success');
             } catch(e) {
@@ -929,6 +875,7 @@
             
             for (var id in groups) {
                 var g = groups[id];
+                // Radius berdasarkan jumlah laporan - semakin banyak semakin besar
                 var radius = 10 + ((g.count - 1) * 8);
                 var radiusMeter = radius * 40;
                 
@@ -967,99 +914,34 @@
             }
         }
         
-        // FITUR 2 & 3: Update Daftar Laporan dengan tombol tindak lanjut dan link Google Maps
+        // Update Daftar Laporan
         function updateList() {
             var list = document.getElementById('report-list');
-            var recent = dataFiltered.slice(-10).reverse();
+            var recent = dataFiltered.slice(-5).reverse();
             if (recent.length === 0) {
                 list.innerHTML = '<li style="text-align:center;">Tidak ada laporan untuk periode ini</li>';
                 return;
             }
             var html = '';
-            recent.forEach((r, index) => {
+            recent.forEach(r => {
                 var tgl = r.timestamp ? new Date(r.timestamp).toLocaleDateString('id-ID') : '-';
                 var lokasi = r.lokasi_lengkap || '-';
-                var isDone = r.tindak_lanjut === 'Sudah';
-                var statusBadge = isDone ? '<span class="status-badge done">✅ Ditindaklanjuti</span>' : '<span class="status-badge">⏳ Belum ditindaklanjuti</span>';
-                var btnText = isDone ? 'Sudah Ditindaklanjuti' : '✓ Tandai Tindak Lanjut';
-                var btnClass = isDone ? 'followup-btn done' : 'followup-btn';
-                var btnDisabled = isDone ? 'disabled' : '';
-                
-                // FITUR 3: Tombol langsung ke Google Maps
-                var gmapsButton = '';
-                if (r.gmaps_url && r.gmaps_url.trim() !== '') {
-                    gmapsButton = `<a href="${r.gmaps_url}" target="_blank" class="map-link-btn"><i class="fas fa-external-link-alt"></i> Buka Google Maps</a>`;
-                } else {
-                    // Alternatif: buat link dari koordinat jika tidak ada URL
-                    var coordLink = `https://www.google.com/maps?q=${r.lat},${r.lon}`;
-                    gmapsButton = `<a href="${coordLink}" target="_blank" class="map-link-btn"><i class="fas fa-map-marker-alt"></i> Lihat di Peta</a>`;
-                }
-                
-                html += `<li data-id="${r.locationId}" data-timestamp="${r.timestamp}">
-                    <b>📍 ${lokasi.substring(0, 50)}${lokasi.length > 50 ? '...' : ''}</b> ${statusBadge}<br>
+                html += `<li>
+                    <b>📍 ${lokasi.substring(0, 45)}${lokasi.length > 45 ? '...' : ''}</b><br>
                     <span style="font-size:10px; color:#6c757d;">📅 ${tgl}</span><br>
-                    <span style="font-size:11px;"><strong>📝 Keterangan:</strong> ${r.keterangan || 'Tanpa keterangan'}</span><br>`;
-                
-                // Tampilkan URL Google Maps jika ada
-                if (r.gmaps_url && r.gmaps_url.trim() !== '') {
-                    html += `<span style="font-size:10px; color:#0d6efd;"><i class="fas fa-link"></i> Link Maps: ${r.gmaps_url.substring(0, 50)}${r.gmaps_url.length > 50 ? '...' : ''}</span><br>`;
-                }
-                
-                html += `<div class="report-actions">
-                            ${gmapsButton}
-                            <button class="${btnClass}" onclick="tindakLanjut('${r.timestamp}', '${r.locationId}', this)" ${btnDisabled}>${btnText}</button>
-                         </div>
+                    <span style="font-size:11px;">${r.keterangan || 'Tanpa keterangan'}</span>
                 </li>`;
             });
             list.innerHTML = html;
         }
         
-        // FITUR 2: Fungsi untuk menandai tindak lanjut
-        async function tindakLanjut(timestamp, locationId, buttonElement) {
-            if (buttonElement.disabled) return;
-            
-            showStatus('Memperbarui status tindak lanjut...', 'info');
-            buttonElement.disabled = true;
-            buttonElement.textContent = 'Menyimpan...';
-            
-            try {
-                var formData = new URLSearchParams();
-                formData.append('action', 'update');
-                formData.append('timestamp', timestamp);
-                formData.append('locationId', locationId);
-                formData.append('tindak_lanjut', 'Sudah');
-                
-                var response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: formData
-                });
-                var result = await response.json();
-                
-                if (result.status === 'success') {
-                    showStatus('✅ Laporan ditandai sudah ditindaklanjuti!', 'success');
-                    // Refresh data untuk menampilkan perubahan
-                    await loadData();
-                } else {
-                    showStatus('❌ Gagal: ' + (result.message || 'Unknown error'), 'error');
-                    buttonElement.disabled = false;
-                    buttonElement.textContent = '✓ Tandai Tindak Lanjut';
-                }
-            } catch(e) {
-                console.error(e);
-                showStatus('❌ Error: ' + e.message, 'error');
-                buttonElement.disabled = false;
-                buttonElement.textContent = '✓ Tandai Tindak Lanjut';
-            }
-        }
-        
-        // Simpan Laporan (dengan tambahan gmaps_url)
+        // Simpan Laporan
         async function simpanLaporan() {
             var kel = document.getElementById('kelurahan').value.trim();
             var kec = document.getElementById('kecamatan').value.trim();
             var kab = document.getElementById('kotakab').value.trim();
             var prov = document.getElementById('provinsi').value.trim();
             var ket = document.getElementById('keterangan').value.trim();
-            var gmapsUrl = document.getElementById('gmaps_url').value.trim();
             var btn = document.getElementById('btn-simpan');
             
             if (!kec) {
@@ -1096,15 +978,12 @@
                 showStatus('💾 Menyimpan ke server...', 'info');
                 
                 var formData = new URLSearchParams();
-                formData.append('timestamp', new Date().toISOString());
                 formData.append('lokasi_lengkap', lokasiFull);
                 formData.append('provinsi', prov);
                 formData.append('keterangan', ket);
                 formData.append('lat', koord.lat);
                 formData.append('lon', koord.lon);
                 formData.append('locationId', locationId);
-                formData.append('gmaps_url', gmapsUrl);
-                formData.append('tindak_lanjut', 'Belum');
                 
                 var response = await fetch(SCRIPT_URL, {
                     method: 'POST',
@@ -1118,7 +997,6 @@
                     document.getElementById('kecamatan').value = '';
                     document.getElementById('kotakab').value = '';
                     document.getElementById('keterangan').value = '';
-                    document.getElementById('gmaps_url').value = '';
                     updatePreview();
                     map.setView([koord.lat, koord.lon], 13);
                     loadData();
