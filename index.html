@@ -290,6 +290,7 @@
             position: relative;
         }
         
+        /* Style untuk tombol tindak lanjut */
         .followup-btn {
             background-color: #28a745;
             color: white;
@@ -314,6 +315,7 @@
             background-color: #218838;
         }
         
+        /* Style untuk tombol Google Maps */
         .map-link-btn {
             background-color: #ea4335;
             color: white;
@@ -565,7 +567,7 @@
             <textarea id="keterangan" placeholder="Contoh: Toko ABC menjual rokok tanpa pita cukai. Info tambahan: no telp 0812xxxx, lokasi dekat pasar"></textarea>
         </div>
         
-        <!-- Kolom Input URL Google Maps -->
+        <!-- FITUR 1: Kolom Input URL Google Maps -->
         <div class="form-group">
             <label>🗺️ URL Google Maps Lokasi <span class="optional">(Opsional)</span></label>
             <input type="url" id="gmaps_url" placeholder="https://maps.app.goo.gl/... atau https://www.google.com/maps/...">
@@ -965,7 +967,7 @@
             }
         }
         
-        // Update Daftar Laporan dengan tombol yang sudah diperbaiki
+        // FITUR 2 & 3: Update Daftar Laporan dengan tombol tindak lanjut dan link Google Maps
         function updateList() {
             var list = document.getElementById('report-list');
             var recent = dataFiltered.slice(-10).reverse();
@@ -974,7 +976,7 @@
                 return;
             }
             var html = '';
-            recent.forEach((r) => {
+            recent.forEach((r, index) => {
                 var tgl = r.timestamp ? new Date(r.timestamp).toLocaleDateString('id-ID') : '-';
                 var lokasi = r.lokasi_lengkap || '-';
                 var isDone = r.tindak_lanjut === 'Sudah';
@@ -983,45 +985,41 @@
                 var btnClass = isDone ? 'followup-btn done' : 'followup-btn';
                 var btnDisabled = isDone ? 'disabled' : '';
                 
-                // PERBAIKAN 1: Tombol Maps mengutamakan URL Google Maps jika ada
+                // FITUR 3: Tombol langsung ke Google Maps
                 var gmapsButton = '';
-                if (r.gmaps_url && r.gmaps_url.trim() !== '' && r.gmaps_url !== 'undefined') {
-                    // Gunakan URL Google Maps yang disimpan
-                    gmapsButton = `<a href="${r.gmaps_url}" target="_blank" class="map-link-btn"><i class="fas fa-external-link-alt"></i> Buka Google Maps (URL)</a>`;
+                if (r.gmaps_url && r.gmaps_url.trim() !== '') {
+                    gmapsButton = `<a href="${r.gmaps_url}" target="_blank" class="map-link-btn"><i class="fas fa-external-link-alt"></i> Buka Google Maps</a>`;
                 } else {
-                    // Fallback: buat link dari koordinat kecamatan
+                    // Alternatif: buat link dari koordinat jika tidak ada URL
                     var coordLink = `https://www.google.com/maps?q=${r.lat},${r.lon}`;
-                    gmapsButton = `<a href="${coordLink}" target="_blank" class="map-link-btn"><i class="fas fa-map-marker-alt"></i> Lihat di Peta (Koordinat)</a>`;
-                }
-                
-                // PERBAIKAN 2: Tampilkan URL Maps yang disimpan (jika ada)
-                var urlDisplay = '';
-                if (r.gmaps_url && r.gmaps_url.trim() !== '' && r.gmaps_url !== 'undefined') {
-                    var shortUrl = r.gmaps_url.length > 50 ? r.gmaps_url.substring(0, 50) + '...' : r.gmaps_url;
-                    urlDisplay = `<span style="font-size:10px; color:#0d6efd; display:block; margin-top:4px;"><i class="fas fa-link"></i> Link: ${shortUrl}</span>`;
+                    gmapsButton = `<a href="${coordLink}" target="_blank" class="map-link-btn"><i class="fas fa-map-marker-alt"></i> Lihat di Peta</a>`;
                 }
                 
                 html += `<li data-id="${r.locationId}" data-timestamp="${r.timestamp}">
                     <b>📍 ${lokasi.substring(0, 50)}${lokasi.length > 50 ? '...' : ''}</b> ${statusBadge}<br>
                     <span style="font-size:10px; color:#6c757d;">📅 ${tgl}</span><br>
-                    <span style="font-size:11px;"><strong>📝 Keterangan:</strong> ${r.keterangan || 'Tanpa keterangan'}</span>
-                    ${urlDisplay}
-                    <div class="report-actions">
-                        ${gmapsButton}
-                        <button class="${btnClass}" onclick="tindakLanjut('${r.timestamp}', '${r.locationId}', this)" ${btnDisabled}>${btnText}</button>
-                    </div>
+                    <span style="font-size:11px;"><strong>📝 Keterangan:</strong> ${r.keterangan || 'Tanpa keterangan'}</span><br>`;
+                
+                // Tampilkan URL Google Maps jika ada
+                if (r.gmaps_url && r.gmaps_url.trim() !== '') {
+                    html += `<span style="font-size:10px; color:#0d6efd;"><i class="fas fa-link"></i> Link Maps: ${r.gmaps_url.substring(0, 50)}${r.gmaps_url.length > 50 ? '...' : ''}</span><br>`;
+                }
+                
+                html += `<div class="report-actions">
+                            ${gmapsButton}
+                            <button class="${btnClass}" onclick="tindakLanjut('${r.timestamp}', '${r.locationId}', this)" ${btnDisabled}>${btnText}</button>
+                         </div>
                 </li>`;
             });
             list.innerHTML = html;
         }
         
-        // PERBAIKAN 3: Fungsi tindak lanjut yang lebih robust
+        // FITUR 2: Fungsi untuk menandai tindak lanjut
         async function tindakLanjut(timestamp, locationId, buttonElement) {
             if (buttonElement.disabled) return;
             
             showStatus('Memperbarui status tindak lanjut...', 'info');
             buttonElement.disabled = true;
-            var originalText = buttonElement.textContent;
             buttonElement.textContent = 'Menyimpan...';
             
             try {
@@ -1033,14 +1031,9 @@
                 
                 var response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    }
+                    body: formData
                 });
                 var result = await response.json();
-                
-                console.log('Update response:', result);
                 
                 if (result.status === 'success') {
                     showStatus('✅ Laporan ditandai sudah ditindaklanjuti!', 'success');
@@ -1049,17 +1042,17 @@
                 } else {
                     showStatus('❌ Gagal: ' + (result.message || 'Unknown error'), 'error');
                     buttonElement.disabled = false;
-                    buttonElement.textContent = originalText;
+                    buttonElement.textContent = '✓ Tandai Tindak Lanjut';
                 }
             } catch(e) {
-                console.error('Error in tindakLanjut:', e);
+                console.error(e);
                 showStatus('❌ Error: ' + e.message, 'error');
                 buttonElement.disabled = false;
-                buttonElement.textContent = originalText;
+                buttonElement.textContent = '✓ Tandai Tindak Lanjut';
             }
         }
         
-        // Simpan Laporan
+        // Simpan Laporan (dengan tambahan gmaps_url)
         async function simpanLaporan() {
             var kel = document.getElementById('kelurahan').value.trim();
             var kec = document.getElementById('kecamatan').value.trim();
@@ -1104,8 +1097,8 @@
                 
                 var formData = new URLSearchParams();
                 formData.append('timestamp', new Date().toISOString());
-                formData.append('provinsi', prov);
                 formData.append('lokasi_lengkap', lokasiFull);
+                formData.append('provinsi', prov);
                 formData.append('keterangan', ket);
                 formData.append('lat', koord.lat);
                 formData.append('lon', koord.lon);
@@ -1115,14 +1108,9 @@
                 
                 var response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    }
+                    body: formData
                 });
                 var result = await response.json();
-                
-                console.log('Save response:', result);
                 
                 if (result.status === 'success') {
                     showStatus('✅ Laporan berhasil disimpan!', 'success');
@@ -1135,10 +1123,10 @@
                     map.setView([koord.lat, koord.lon], 13);
                     loadData();
                 } else {
-                    showStatus('❌ Gagal: ' + (result.message || 'Unknown error'), 'error');
+                    showStatus('❌ Gagal: ' + result.message, 'error');
                 }
             } catch(e) {
-                console.error('Error in simpanLaporan:', e);
+                console.error(e);
                 showStatus('❌ Error: ' + e.message, 'error');
             } finally {
                 btn.disabled = false;
